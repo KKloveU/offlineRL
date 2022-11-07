@@ -16,14 +16,18 @@ from logger import logger, setup_logger
 from data_utils import d4rl_trajectories
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+dataset_list=['hopper-medium-expert-v2', 'ant-expert-v2', 'halfcheetah-medium-expert-v2',
+'halfcheetah-random-v2', 'ant-random-v2', 'hopper-random-v2',
+'halfcheetah-medium-v2',  'ant-medium-expert-v2', 'walker2d-expert-v2', 'ant-medium-replay-v2',
+'ant-medium-v2', 'hopper-expert-v2', 'walker2d-random-v2',
+'hopper-medium-v2', 'walker2d-medium-v2', 'halfcheetah-medium-replay-v2',
+'halfcheetah-expert-v2', 'hopper-medium-replay-v2',
+'walker2d-medium-expert-v2']
 
-dataset_list=['hopper-medium-expert-v2', 'ant-expert-v2', 'halfcheetah-medium-expert-v2',  'walker2d-medium-v0', 
-'halfcheetah-random-v2', 'ant-random-v2', 'halfcheetah-expert-v0', 'hopper-random-v2', 'ant-random-v0', 'hopper-expert-v0', 
-'halfcheetah-medium-v2',  'ant-medium-expert-v2', 'halfcheetah-random-v0', 'walker2d-expert-v2', 'ant-medium-replay-v2', 
-'ant-medium-v2', 'hopper-expert-v2', 'walker2d-expert-v0', 'ant-medium-expert-v0', 'walker2d-random-v2', 'hopper-medium-v0', 'ant-medium-v0', 
-'ant-expert-v0', 'halfcheetah-medium-expert-v0', 'hopper-medium-v2', 'walker2d-random-v0', 'walker2d-medium-v2', 'halfcheetah-medium-replay-v2',
-'halfcheetah-medium-v0', 'halfcheetah-expert-v2', 'walker2d-medium-expert-v0', 'hopper-random-v0', 'hopper-medium-replay-v2',
-'hopper-medium-expert-v0', 'walker2d-medium-expert-v2']
+
+worng=['halfcheetah-medium-v0','hopper-random-v0','halfcheetah-expert-v0','ant-expert-v0',
+    'halfcheetah-medium-expert-v0','hopper-expert-v0','halfcheetah-random-v0','ant-medium-v0','walker2d-expert-v0','ant-medium-expert-v0','walker2d-medium-v0',
+    'ant-random-v0','hopper-medium-v0','walker2d-medium-expert-v0','walker2d-random-v0','hopper-medium-expert-v0']
 
 
 def evaluate_policy(env,policy, mean, std, eval_episodes=10):
@@ -55,18 +59,14 @@ def evaluate_policy(env,policy, mean, std, eval_episodes=10):
     print ("---------------------------------------")
     return avg_return, std_return, median_return, min_return, d4rl_score
 
-
 @ray.remote
 def run_algo(args):
-    # import d4rl
-    print("--------------------------",torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-    init_time = time.time()
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-
+    import d4rl
     env = gym.make(args.env_name)
     env.seed(args.seed)
-
+    # dataset= d4rl.qlearning_dataset(env)
+    dataset= env.unwrapped.get_dataset()
+    init_time = time.time()
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
     max_action = float(env.action_space.high[0])
@@ -76,6 +76,7 @@ def run_algo(args):
     # Load buffer
     replay_buffer = utils.ReplayBuffer()
     dataset = env.unwrapped.get_dataset()
+
     # num_trajectories = int(args.buffer_size / env._max_episode_steps)
     d4rl_trajectories(dataset, env, replay_buffer, buffer_size=args.buffer_size)
     mean, std = replay_buffer.normalize_states()
@@ -132,7 +133,7 @@ def run_algo(args):
         logger.record_tabular('Eval/D4RL_score', d4rl_score)
         logger.record_tabular('training time', (time.time() - init_time) / (60 * 60))
         logger.dump_tabular()
-    return 0
+    # return 0
 
 
 if __name__=="__main__":
@@ -152,23 +153,20 @@ if __name__=="__main__":
     parser.add_argument('--num_worker', default=1, type=int)
     args = parser.parse_args()
 
-    # ray.init()
+    ray.init()
     print("start auto run_algo!")
     worker_list=[]
-    for dataset in dataset_list:
+    for dataset_name in dataset_list:
         if len(worker_list)<args.num_worker:
-            print("ready to run",dataset)
-            args.env_name=dataset
-            worker_list.append(run_algo.options(num_gpus=0.1).remote(args))
-
+            print("================= ready to run",dataset_name," =================")
+            args.env_name=dataset_name
+            worker_list.append(run_algo.remote(args))
         else:
             done,worker_list=ray.wait(worker_list)
-            print(ray.get(done))
+            # ray.get(done)
 
-    print("all start wait to finish!")
+    print("=============== all start wait to finish! =====================")
     while(len(worker_list)):
-        worker_list=ray.wait(worker_list)[1]
-    # time.sleep(1)
+        done,worker_list=ray.wait(worker_list)
     ray.shutdown()
     print("end!")
-
