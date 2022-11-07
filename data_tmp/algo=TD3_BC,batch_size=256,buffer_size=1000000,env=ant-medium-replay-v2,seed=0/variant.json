@@ -1,0 +1,7 @@
+{
+  "algo": "TD3_BC",
+  "batch_size": 256,
+  "buffer_size": 1000000,
+  "env": "ant-medium-replay-v2",
+  "seed": 0
+}
