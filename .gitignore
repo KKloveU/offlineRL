@@ -7,8 +7,8 @@ __pycache__/
 *.so
 
 # tmp file
-!data_tmp/
-!data_plot/
+data_tmp/*
+data_plot/*
 data_backup/
 
 
