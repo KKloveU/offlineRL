@@ -156,6 +156,7 @@ if __name__=="__main__":
     parser.add_argument('--hidden_dim', default=256, type=int)
     parser.add_argument('--buffer_size', default=1000000, type=int)
     parser.add_argument('--num_worker', default=1, type=int)
+    parser.add_argument('--cuda',action='store_true')
     args = parser.parse_args()
 
     ray.init()
@@ -165,7 +166,10 @@ if __name__=="__main__":
         if len(worker_list)<args.num_worker:
             print("================= ready to run",dataset_name," =================")
             args.env_name=dataset_name
-            worker_list.append(run_algo.remote(args))
+            if not args.cuda:
+                worker_list.append(run_algo.remote(args))
+            else:
+                worker_list.append(run_algo.options(num_gpus=0.2).remote(args))
         else:
             done,worker_list=ray.wait(worker_list)
             # ray.get(done)
