@@ -5,8 +5,6 @@ import torch.nn.functional as F
 import sys
 sys.path.append("..") 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-from logger import logger
-from logger import create_stats_ordered_dict
 import copy
 
 
@@ -113,7 +111,7 @@ class VAE(nn.Module):
 
 
 class BCQ(object):
-    def __init__(self, state_dim, action_dim, max_action, cloning=False, discount=0.99):
+    def __init__(self, state_dim, action_dim, max_action,logger,cloning=False, discount=0.99 ):
         latent_dim = action_dim * 2
 
         self.actor = Actor(state_dim, action_dim, max_action).to(device)
@@ -133,7 +131,7 @@ class BCQ(object):
         self.action_dim = action_dim
         self.use_cloning = cloning
         self.discount = discount
-
+        self.logger=logger
 
     def policy_loss_(self, state, perturbed_actions, y=None):
 
@@ -219,9 +217,9 @@ class BCQ(object):
             actor_loss.backward()
             self.actor_optimizer.step()
 
-        logger.record_tabular('Train/VAE Loss', vae_loss.cpu().data.numpy())
-        logger.record_tabular('Train/Actor Loss', actor_loss.cpu().data.numpy())
-        logger.record_tabular('Train/Critic Loss', critic_loss.cpu().data.numpy())
+        self.logger.record_tabular('Train/VAE Loss', vae_loss.cpu().data.numpy())
+        self.logger.record_tabular('Train/Actor Loss', actor_loss.cpu().data.numpy())
+        self.logger.record_tabular('Train/Critic Loss', critic_loss.cpu().data.numpy())
 
     def save(self, filename, directory):
         torch.save(self.actor.state_dict(), '%s/%s_actor.pth' % (directory, filename))

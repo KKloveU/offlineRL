@@ -96,6 +96,7 @@ def create_log_dir(
 
 
 def setup_logger(
+        logger,
         exp_prefix="default",
         variant=None,
         text_log_file="debug.log",
@@ -491,5 +492,5 @@ class Logger(object):
                 raise NotImplementedError
 
 
-logger = Logger()
+# logger = Logger()
 

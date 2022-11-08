@@ -6,7 +6,7 @@ import argparse
 import os
 import utils
 from algo import BCQ,IQL,TD3_BC
-from logger import logger, setup_logger
+from logger import Logger, setup_logger
 import d4rl
 import torch.nn as nn
 import time
@@ -92,32 +92,36 @@ if __name__ == "__main__":
     print ("Settings: " + file_name)
     print ("---------------------------------------")
 
-    setup_logger(file_name, variant=variant, log_dir=os.path.join(args.log_dir, file_name))
-
+    logger=Logger()
+    setup_logger(logger,file_name, variant=variant, log_dir=os.path.join(args.log_dir, file_name))
 
     if args.algo_name == 'BCQ':
         policy = BCQ.BCQ(state_dim=state_dim,
-                           action_dim=action_dim,
-                           max_action=max_action,
-                           discount=args.gamma)
+                            action_dim=action_dim,
+                            max_action=max_action,
+                            discount=args.gamma,
+                            logger=logger)
     elif args.algo_name == 'IQL':
         policy = IQL.IQL(state_dim=state_dim,
-                           action_dim=action_dim,
-                           max_action=max_action,
-                           hidden_dim=args.hidden_dim,
-                           discount=args.gamma)
+                            action_dim=action_dim,
+                            max_action=max_action,
+                            hidden_dim=args.hidden_dim,
+                            discount=args.gamma,
+                            logger=logger)
     elif args.algo_name == 'BCQ-v2':
         policy = BCQ.BCQ(state_dim=state_dim,
-                           action_dim=action_dim,
-                           max_action=max_action,
-                           cloning=True,
-                           discount=args.gamma)
+                            action_dim=action_dim,
+                            max_action=max_action,
+                            cloning=True,
+                            discount=args.gamma,
+                            logger=logger)
     elif args.algo_name == 'TD3_BC':
         policy = TD3_BC.TD3_BC(state_dim=state_dim,
-                              action_dim=action_dim,
-                              max_action=max_action,
-                              hidden_dim=args.hidden_dim,
-                              discount=args.gamma)
+                            action_dim=action_dim,
+                            max_action=max_action,
+                            hidden_dim=args.hidden_dim,
+                            discount=args.gamma,
+                            logger=logger)
     else:
         sys.exit(f'Choose the right algo name, {args.algo_name} not found')
 

@@ -5,8 +5,6 @@ import torch.nn.functional as F
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 import sys
 sys.path.append("..") 
-from logger import logger
-from logger import create_stats_ordered_dict
 import copy
 
 class TD3Actor(nn.Module):
@@ -58,15 +56,14 @@ class TD3Critic(nn.Module):
 
 class TD3_BC(object):
     def __init__(
-        self, state_dim, action_dim, max_action,
+        self, state_dim, action_dim, max_action, logger, 
         hidden_dim=256,
         discount=0.99,
         tau=0.005,
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        alpha=2.5,
-
+        alpha=2.5
     ):
 
         self.discounts = 0.99
@@ -88,6 +85,7 @@ class TD3_BC(object):
         self.policy_freq = policy_freq
         self.alpha = alpha
         self.total_it = 0
+        self.logger=logger
 
     def select_action(self, state):
         state = torch.FloatTensor(state).to(device)
@@ -145,8 +143,8 @@ class TD3_BC(object):
                 for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-        logger.record_tabular('Train/Actor Loss', actor_loss.cpu().data.numpy())
-        logger.record_tabular('Train/Critic Loss', critic_loss.cpu().data.numpy())
+        self.logger.record_tabular('Train/Actor Loss', actor_loss.cpu().data.numpy())
+        self.logger.record_tabular('Train/Critic Loss', critic_loss.cpu().data.numpy())
 
     def save(self, filename, directory):
         torch.save(self.actor.state_dict(), '%s/%s_actor.pth' % (directory, filename))

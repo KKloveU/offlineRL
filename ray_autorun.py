@@ -12,7 +12,7 @@ import random
 import numpy as np
 import torch.nn as nn
 from algo import BCQ,IQL,TD3_BC
-from logger import logger, setup_logger
+from logger import Logger, setup_logger
 from data_utils import d4rl_trajectories
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -62,11 +62,10 @@ def evaluate_policy(env,policy, mean, std, eval_episodes=10):
 @ray.remote
 def run_algo(args):
     import d4rl
+    init_time = time.time()
     env = gym.make(args.env_name)
     env.seed(args.seed)
-    # dataset= d4rl.qlearning_dataset(env)
-    dataset= env.unwrapped.get_dataset()
-    init_time = time.time()
+    
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
     max_action = float(env.action_space.high[0])
@@ -75,6 +74,7 @@ def run_algo(args):
 
     # Load buffer
     replay_buffer = utils.ReplayBuffer()
+    # dataset= d4rl.qlearning_dataset(env)
     dataset = env.unwrapped.get_dataset()
 
     # num_trajectories = int(args.buffer_size / env._max_episode_steps)
@@ -90,32 +90,37 @@ def run_algo(args):
     print ("Settings: " + file_name)
     print ("---------------------------------------")
 
-    setup_logger(file_name, variant=variant, log_dir=os.path.join(args.log_dir, file_name))
+    logger=Logger()
+    setup_logger(logger,file_name, variant=variant, log_dir=os.path.join(args.log_dir, file_name))
 
 
     if args.algo_name == 'BCQ':
         policy = BCQ.BCQ(state_dim=state_dim,
-                           action_dim=action_dim,
-                           max_action=max_action,
-                           discount=args.gamma)
+                            action_dim=action_dim,
+                            max_action=max_action,
+                            discount=args.gamma,
+                            logger=logger)
     elif args.algo_name == 'IQL':
         policy = IQL.IQL(state_dim=state_dim,
-                           action_dim=action_dim,
-                           max_action=max_action,
-                           hidden_dim=args.hidden_dim,
-                           discount=args.gamma)
+                            action_dim=action_dim,
+                            max_action=max_action,
+                            hidden_dim=args.hidden_dim,
+                            discount=args.gamma,
+                            logger=logger)
     elif args.algo_name == 'BCQ-v2':
         policy = BCQ.BCQ(state_dim=state_dim,
-                           action_dim=action_dim,
-                           max_action=max_action,
-                           cloning=True,
-                           discount=args.gamma)
+                            action_dim=action_dim,
+                            max_action=max_action,
+                            cloning=True,
+                            discount=args.gamma,
+                            logger=logger)
     elif args.algo_name == 'TD3_BC':
         policy = TD3_BC.TD3_BC(state_dim=state_dim,
-                              action_dim=action_dim,
-                              max_action=max_action,
-                              hidden_dim=args.hidden_dim,
-                              discount=args.gamma)
+                            action_dim=action_dim,
+                            max_action=max_action,
+                            hidden_dim=args.hidden_dim,
+                            discount=args.gamma,
+                            logger=logger)
     else:
         sys.exit(f'Choose the right algo name, {args.algo_name} not found')
 

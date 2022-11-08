@@ -5,8 +5,6 @@ import torch.nn.functional as F
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 import sys
 sys.path.append("..") 
-from logger import logger
-from logger import create_stats_ordered_dict
 import copy
 from torch.distributions import MultivariateNormal
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -78,8 +76,8 @@ class GaussianPolicy(nn.Module):
             return dist.mean if deterministic else dist.sample()
 
 class IQL(object):
-    def __init__(self, state_dim, action_dim, max_action, hidden_dim=256, discount=0.99, max_steps=1000000,
-                 beta=3.0, EXP_ADV_MAX=100., alpha=0.005, tau=0.7):
+    def __init__(self, state_dim, action_dim, max_action, logger, hidden_dim=256, discount=0.99, max_steps=1000000,
+                 beta=3.0, EXP_ADV_MAX=100., alpha=0.005, tau=0.7 ):
 
         self.actor = GaussianPolicy(state_dim, action_dim, hidden_dim).to(device)
         self.actor_target = copy.deepcopy(self.actor).requires_grad_(False).to(device)
@@ -101,6 +99,7 @@ class IQL(object):
         self.EXP_ADV_MAX = EXP_ADV_MAX
         self.alpha = alpha
         self.tau = tau
+        self.logger=logger
 
 
     def policy_loss_(self, state, perturbed_actions, y=None):
@@ -168,9 +167,9 @@ class IQL(object):
             self.update_exponential_moving_average(self.critic_target, self.critic, self.alpha)
 
 
-        logger.record_tabular('Train/Value Loss', v_loss.cpu().data.numpy())
-        logger.record_tabular('Train/Actor Loss', actor_loss.cpu().data.numpy())
-        logger.record_tabular('Train/Critic Loss', q_loss.cpu().data.numpy())
+        self.logger.record_tabular('Train/Value Loss', v_loss.cpu().data.numpy())
+        self.logger.record_tabular('Train/Actor Loss', actor_loss.cpu().data.numpy())
+        self.logger.record_tabular('Train/Critic Loss', q_loss.cpu().data.numpy())
 
 
     def save(self, filename, directory):
