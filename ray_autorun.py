@@ -74,8 +74,8 @@ def run_algo(args):
 
     # Load buffer
     replay_buffer = utils.ReplayBuffer()
-    # dataset= d4rl.qlearning_dataset(env)
-    dataset = env.unwrapped.get_dataset()
+    dataset = d4rl.qlearning_dataset(env)
+    # dataset = env.unwrapped.get_dataset()
 
     # num_trajectories = int(args.buffer_size / env._max_episode_steps)
     d4rl_trajectories(dataset, env, replay_buffer, buffer_size=args.buffer_size)

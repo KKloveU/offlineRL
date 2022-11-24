@@ -13,8 +13,8 @@ def d4rl_trajectories(dataset, env, replay_buffer, buffer_size=2000000, action_r
     expert_next_states = dataset['next_observations'][:N]
     expert_reward = dataset['rewards'][:N]
     expert_dones = dataset['terminals'][:N]
-    expert_timeouts = dataset['timeouts'][:N]
-    expert_dones[np.where(dataset['timeouts'][:N] == 1)] = True
+    # expert_timeouts = dataset['timeouts'][:N]
+    # expert_dones[np.where(dataset['timeouts'][:N] == 1)] = True
 
     expert_states_traj = [[]]
     expert_actions_traj = [[]]
@@ -41,7 +41,7 @@ def d4rl_trajectories(dataset, env, replay_buffer, buffer_size=2000000, action_r
             expert_next_states_traj[-1].append(expert_next_states[i+Z-1])
             expert_dones_traj[-1].append(expert_dones[i+Z-1])
 
-        if (expert_dones[i + Z - 1]) or (expert_timeouts[i+Z-1]):
+        if (expert_dones[i + Z - 1]):
             expert_states_traj.append([])
             expert_actions_traj.append([])
             expert_rewards_traj.append([])

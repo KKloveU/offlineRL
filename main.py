@@ -78,7 +78,8 @@ if __name__ == "__main__":
 
     # Load buffer
     replay_buffer = utils.ReplayBuffer()
-    dataset = env.unwrapped.get_dataset()
+    # dataset = env.unwrapped.get_dataset()
+    dataset = d4rl.qlearning_dataset(env)
     # num_trajectories = int(args.buffer_size / env._max_episode_steps)
     d4rl_trajectories(dataset, env, replay_buffer, buffer_size=args.buffer_size)
     mean, std = replay_buffer.normalize_states()
